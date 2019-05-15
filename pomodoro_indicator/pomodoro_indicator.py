@@ -46,8 +46,11 @@ import webbrowser
 import dbus
 from .configurator import Configuration
 from .preferences_dialog import PreferencesDialog
+from .stats_window import StatsWindow
+# from .today_dialog import TodayDialog
 from .player import Player
 from .player import Status
+from .pomo import Pomo
 from .comun import _
 from . import comun
 
@@ -97,6 +100,7 @@ class Pomodoro_Indicator(GObject.GObject):
         self.animate = False
         self.frame = 0
         self.pomodoros = 0
+        self.pomo = Pomo()
         self.player = Player()
         self.notification = Notify.Notification.new('', '', None)
         self.read_preferences()
@@ -169,6 +173,26 @@ class Pomodoro_Indicator(GObject.GObject):
         self.active_icon = comun.STATUS_ICON[configuration.get('theme')][0]
 
     # ################## menu creation ######################
+
+    def get_stats_menu(self):
+        stats_menu = Gtk.Menu()
+
+        stats_yesterday = Gtk.MenuItem(label=_("Yesterday : %s" % self.pomo.yesterday))
+        stats_yesterday.show()
+        stats_menu.append(stats_yesterday)
+
+        separator = Gtk.SeparatorMenuItem()
+        separator.show()
+        stats_menu.append(separator)
+
+        stats_more = Gtk.MenuItem.new_with_label(_('More'))
+        stats_more.connect('activate', self.on_stats_more)
+        stats_more.show()
+        stats_menu.append(stats_more)
+
+        stats_menu.show()
+        return stats_menu
+
 
     def get_help_menu(self):
         help_menu = Gtk.Menu()
@@ -259,6 +283,15 @@ pomodoro-en-ubuntu-con-pomodoro-indicator/'))
         self.pomodoro_restart.show()
         menu.append(self.pomodoro_restart)
 
+        self.menu_today = Gtk.MenuItem.new_with_label(_(str(self.pomo.get_pomo_as_string())))
+        self.menu_today.show()
+        menu.append(self.menu_today)
+
+        menu_stats = Gtk.MenuItem.new_with_label(_("Statistics"))
+        menu_stats.set_submenu(self.get_stats_menu())
+        menu_stats.show()
+        menu.append(menu_stats)
+
         separator1 = Gtk.SeparatorMenuItem()
         separator1.show()
         menu.append(separator1)
@@ -348,25 +381,38 @@ pomodoro-en-ubuntu-con-pomodoro-indicator/'))
         icon = os.path.join(comun.ICONDIR,
                             'pomodoro-indicator-%s-%02d.svg' % (self.theme,
                                                                 self.frame))
-        self.notification.update('Pomodoro-Indicator', _('Break ends'), icon)
+        self.notification.update('Pomodoro-Indicator', _('Break ends - get back to work'), icon)
         self.notification.show()
         if self.play_sounds:
             self.play(self.break_sound_file)
-        print('**************************')
-        print(icon)
+        # print('**************************')
+        # print(icon)
+        # self.indicator.set_icon(icon)
+        icon = os.path.join(comun.ICONDIR,
+                            'pomodoro-start-%s.svg' % (self.theme))
         self.indicator.set_icon(icon)
         self.pomodoros += 1
-        if self.pomodoros < self.max_pomodoros:
-            self.notification.update('Pomodoro-Indicator',
-                                     _('Session starts'), icon)
-            self.notification.show()
-            interval = int(self.session_length * 60 / TOTAL_FRAMES)
-            self.start_working_process(interval, self.countdown_session)
-        else:
-            self.pomodoros = 0
-            self.animate = False
-            self.active = False
-            self.stop_working_process()
+        self.pomo.update_pomo_counter()
+        self.menu_today.set_label(_(self.pomo.get_pomo_as_string()))
+        self.pomodoro_start.set_label(_('Start'))
+        # self.active = False
+        # self.on_pomodoro_start(widget)
+        # self.stop_working_process()
+        self.stop_working_process()
+        self.active = False
+        # self.pomodoros = 0
+        # self.frame = 0
+        # if self.pomodoros < self.max_pomodoros:
+        #     self.notification.update('Pomodoro-Indicator',
+        #                              _('Session starts'), icon)
+        #     self.notification.show()
+        #     interval = int(self.session_length * 60 / TOTAL_FRAMES)
+        #     self.start_working_process(interval, self.countdown_session)
+        # else:
+        #     self.pomodoros = 0
+        #     self.animate = False
+        #     self.active = False
+        #     self.stop_working_process()
 
     def on_session_end(self, widget):
         self.active = True
@@ -435,6 +481,43 @@ pomodoro-en-ubuntu-con-pomodoro-indicator/'))
                 return False
             return True
 
+    def get_stats_more_dialog(self):
+        stats_more_dialog = Gtk.Window(title="More Stats")
+        stats_more_dialog.set_icon(GdkPixbuf.Pixbuf.new_from_file(comun.ICON))
+        stats_more_dialog.set_border_width(10)
+
+        # stats_more_dialog.set_logo(GdkPixbuf.Pixbuf.new_from_file(comun.ICON))
+        # frame = Gtk.Frame()
+
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        stats_more_dialog.add(main_box)
+
+        spinner = Gtk.Spinner()
+        main_box.pack_start(spinner, True, True, 0)
+
+        # vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        # stats_more_dialog.add(vbox)
+        #
+        # progressbar = Gtk.ProgressBar()
+        # vbox.pack_start(progressbar, True, True, 10)
+
+        # button = Gtk.CheckButton("Show text")
+        # button.connect("toggled", self.on_show_text_toggled)
+        # vbox.pack_start(button, True, True, 0)
+        #
+        # button = Gtk.CheckButton("Activity mode")
+        # button.connect("toggled", self.on_activity_mode_toggled)
+        # vbox.pack_start(button, True, True, 0)
+        #
+        # button = Gtk.CheckButton("Right to Left")
+        # button.connect("toggled", self.on_right_to_left_toggled)
+        # vbox.pack_start(button, True, True, 0)
+        #
+        stats_more_dialog.timeout_id = None
+        # stats_more_dialog.activity_mode = False
+
+        return stats_more_dialog
+
     def get_about_dialog(self):
         """Create and populate the about dialog."""
         about_dialog = Gtk.AboutDialog()
@@ -471,6 +554,18 @@ Lorenzo Carbonell <https://launchpad.net/~lorenzo-carbonell>\n
         return about_dialog
 
     # ##################### callbacks for the menu #######################
+    def on_today_item(self, widget, data=None):
+        widget.set_sensitive(False)
+        today_dialog = TodayDialog()
+        if today_dialog.run() == Gtk.ResponseType.ACCEPT:
+            today_dialog.close_ok()
+            self.read_today()
+        today_dialog.hide()
+        today_dialog.destroy()
+        self.indicator.set_icon(self.active_icon)
+        widget.set_sensitive(True)
+
+
     def on_preferences_item(self, widget, data=None):
         widget.set_sensitive(False)
         preferences_dialog = PreferencesDialog()
@@ -484,6 +579,15 @@ Lorenzo Carbonell <https://launchpad.net/~lorenzo-carbonell>\n
 
     def on_quit_item(self, widget, data=None):
         exit(0)
+
+    def on_stats_more(self, widget, data=None):
+        widget.set_sensitive(False)
+        stats_window = StatsWindow()
+        # self.stats_dialog = self.get_stats_more_dialog()
+        # self.stats_dialog.show()
+        # self.stats_dialog.run()
+        # self.stats_dialog.destroy()
+        # self.stats_dialog = None
 
     def on_about_item(self, widget, data=None):
         if self.about_dialog:
@@ -510,4 +614,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    print(okan)

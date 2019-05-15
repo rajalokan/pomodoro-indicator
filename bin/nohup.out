@@ -1,0 +1,11 @@
+
+(pomodoro-indicator:14673): Gtk-WARNING **: 19:43:46.246: Theme parsing error: gtk.css:6777:29: Missing opening bracket in color definition
+
+(pomodoro-indicator:14673): Gtk-WARNING **: 19:43:46.246: Theme parsing error: gtk.css:6779:34: Missing opening bracket in color definition
+
+(pomodoro-indicator:14673): Gtk-WARNING **: 19:43:46.246: Theme parsing error: gtk.css:6785:28: Missing opening bracket in color definition
+/home/okan/sentinel/playground/rajalokan/pomodoro-indicator/bin
+/home/okan/sentinel/playground/rajalokan/pomodoro-indicator/src/pomodoro_indicator
+application already running
+/home/okan/sentinel/playground/rajalokan/pomodoro-indicator/bin
+/home/okan/sentinel/playground/rajalokan/pomodoro-indicator/src/pomodoro_indicator

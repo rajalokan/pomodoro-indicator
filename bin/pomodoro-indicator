@@ -21,20 +21,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.#
 
-import os
-import sys
-
-USRDIR = '/usr'
-SHAREDIR = os.path.join(USRDIR, 'share', 'pomodoro_indicator')
-CURRENTDIR = os.path.abspath(os.path.dirname(__file__))
+from pomodoro_indicator.pomodoro_indicator import main
 
 if __name__ == '__main__':
-    print(CURRENTDIR)
-    if CURRENTDIR.startswith(USRDIR):
-        sys.path.append(SHAREDIR)
-    else:
-        sys.path.append(os.path.normpath(os.path.join(CURRENTDIR, '../src')))
-    from pomodoro_indicator.pomodoro_indicator import main
-
     main()
-exit(0)
